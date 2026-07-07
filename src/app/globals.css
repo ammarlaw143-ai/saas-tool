@@ -1,6 +1,8 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
+:root {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   
   --color-border: hsl(240 5.9% 90%);
@@ -37,15 +39,15 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 
-  @keyframes accordion-down {
-    from { height: 0 }
-    to { height: var(--radix-accordion-content-height) }
-  }
-  @keyframes accordion-up {
-    from { height: var(--radix-accordion-content-height) }
-    to { height: 0 }
-  }
+@keyframes accordion-down {
+  from { height: 0 }
+  to { height: var(--radix-accordion-content-height) }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height) }
+  to { height: 0 }
 }
 
 @layer base {
