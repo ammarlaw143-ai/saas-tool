@@ -1,0 +1,24 @@
+*** Begin Unified Patch
+*** Add/File: changes for postcss and package.json
+--- a/postcss.config.js
++++ b/postcss.config.js
+@@
+ -module.exports = {
+ -  plugins: {
+ -    "@tailwindcss/postcss": {},
+ -  },
+ -};
+ +module.exports = {
+ +  plugins: {
+ +    tailwindcss: {},
+ +    autoprefixer: {},
+ +  },
+ +};
+
+--- a/package.json
++++ b/package.json
+@@
+	"postcss": "^8",
+-    "tailwindcss": "^4.0.0",
++    "autoprefixer": "^10",
++    "tailwindcss": "^4.0.0",
