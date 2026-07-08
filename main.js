@@ -61,6 +61,7 @@ function init() {
     currentYear.textContent = new Date().getFullYear();
     setupEventListeners();
     updateAuthUI();
+    updateThemeUI();
     handleRoute();
     window.addEventListener('hashchange', handleRoute);
 }
@@ -120,12 +121,13 @@ function toggleTheme() {
         document.documentElement.style.colorScheme = 'dark';
     }
     
-    updateThemeIcons();
+    updateThemeUI();
 }
 
-function updateThemeIcons() {
+function updateThemeUI() {
     const sunIcons = document.querySelectorAll('.sun-icon');
     const moonIcons = document.querySelectorAll('.moon-icon');
+    const themeModes = document.querySelectorAll('.theme-mode');
     
     sunIcons.forEach(icon => {
         icon.style.display = currentTheme === 'light' ? 'block' : 'none';
@@ -133,6 +135,16 @@ function updateThemeIcons() {
     
     moonIcons.forEach(icon => {
         icon.style.display = currentTheme === 'dark' ? 'block' : 'none';
+    });
+
+    themeModes.forEach(mode => {
+        mode.textContent = currentTheme === 'light' ? 'Light' : 'Dark';
+    });
+
+    [themeToggle, mobileThemeToggle].forEach(toggle => {
+        if (toggle) {
+            toggle.setAttribute('aria-pressed', currentTheme === 'light' ? 'true' : 'false');
+        }
     });
 }
 
