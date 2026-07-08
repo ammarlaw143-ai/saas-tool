@@ -1,29 +1,214 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="0; url=./vanilla-version/" />
-    <title>ToolVerse AI</title>
-    <style>
-      body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #0b1020;
-        color: #f8fafc;
-        display: grid;
-        place-items: center;
-        min-height: 100vh;
-      }
-      a {
-        color: #8b5cf6;
-      }
-    </style>
-  </head>
-  <body>
-    <p>Loading the HTML/CSS/JavaScript version...</p>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToolVerse AI | Premium AI-Powered File & Developer Utility Suite</title>
+    <meta name="description" content="The ultimate modern workspace for PDFs, images, developers, and AI-powered assets. Free client-side tools and advanced, customizable premium workflows.">
+    <meta name="keywords" content="pdf tools, image converter, developer utility, custom qr codes, ai tools, image compression, nextjs tools">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
     <script>
-      window.location.replace('./vanilla-version/');
+        // Theme initialization
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme') || 'dark';
+                if (theme === 'light') {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                    document.documentElement.style.colorScheme = 'light';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.style.colorScheme = 'dark';
+                }
+            } catch (e) {}
+        })();
     </script>
-  </body>
+
+    <!-- Navbar -->
+    <header id="navbar">
+        <div class="navbar-container">
+            <div class="navbar-content">
+                <!-- Logo -->
+                <a href="/" class="logo">
+                    <div class="logo-icon">
+                        <i data-lucide="sparkles"></i>
+                    </div>
+                    <span class="logo-text">ToolVerse<span class="logo-ai">AI</span></span>
+                </a>
+
+                <!-- Desktop Nav -->
+                <nav class="desktop-nav">
+                    <a href="/tools" class="nav-link">All Tools</a>
+                    <a href="/pricing" class="nav-link">Pricing</a>
+                    <a href="/blog" class="nav-link">Blog</a>
+                    <a href="/contact" class="nav-link">Contact</a>
+                </nav>
+
+                <!-- Right Action Items -->
+                <div class="right-actions">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">
+                        <i data-lucide="sun" class="sun-icon"></i>
+                        <i data-lucide="moon" class="moon-icon"></i>
+                    </button>
+
+                    <div id="auth-buttons">
+                        <a href="/auth/login" class="sign-in-btn">Sign In</a>
+                        <a href="/auth/signup" class="sign-up-btn">Sign Up</a>
+                    </div>
+
+                    <div id="user-menu" class="user-menu" style="display: none;">
+                        <button id="notifications-btn" class="icon-btn">
+                            <i data-lucide="bell"></i>
+                            <span class="notification-badge"></span>
+                        </button>
+                        <button id="profile-btn" class="profile-btn">
+                            <div class="avatar">JD</div>
+                            <span class="username">John Doe</span>
+                        </button>
+                        <a href="/dashboard" class="dashboard-btn">Dashboard</a>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="mobile-actions">
+                    <button id="mobile-theme-toggle" class="theme-toggle">
+                        <i data-lucide="sun" class="sun-icon"></i>
+                        <i data-lucide="moon" class="moon-icon"></i>
+                    </button>
+                    <button id="mobile-menu-btn" class="mobile-menu-btn">
+                        <i data-lucide="menu" class="menu-icon"></i>
+                        <i data-lucide="x" class="close-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="mobile-menu">
+            <div class="mobile-menu-content">
+                <a href="/tools" class="mobile-nav-link">All Tools</a>
+                <a href="/pricing" class="mobile-nav-link">Pricing</a>
+                <a href="/blog" class="mobile-nav-link">Blog</a>
+                <a href="/contact" class="mobile-nav-link">Contact</a>
+                <div class="mobile-auth-section">
+                    <a href="/auth/login" class="mobile-sign-in">Sign In</a>
+                    <a href="/auth/signup" class="mobile-sign-up">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Content will be loaded dynamically based on route -->
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <!-- Logo & Description -->
+                <div class="footer-brand">
+                    <a href="/" class="footer-logo">
+                        <div class="logo-icon">
+                            <i data-lucide="sparkles"></i>
+                        </div>
+                        <span>ToolVerse<span class="logo-ai">AI</span></span>
+                    </a>
+                    <p class="footer-description">
+                        The premier, privacy-focused tool ecosystem. Seamlessly convert files, encode code vectors, analyze statistics, and build AI assets entirely in your browser.
+                    </p>
+
+                    <!-- Newsletter -->
+                    <div class="newsletter">
+                        <h4>Subscribe to our Developer Newsletter</h4>
+                        <form id="newsletter-form" class="newsletter-form">
+                            <input type="email" required placeholder="Enter email to get updates..." class="newsletter-input">
+                            <button type="submit" class="newsletter-btn">
+                                <span>Subscribe</span>
+                                <i data-lucide="send"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Links -->
+                <div class="footer-links">
+                    <h4>Popular Tools</h4>
+                    <ul>
+                        <li><a href="/tools/merge-pdf">Merge PDF</a></li>
+                        <li><a href="/tools/image-compressor">Image Compressor</a></li>
+                        <li><a href="/tools/password-generator">Password Generator</a></li>
+                        <li><a href="/tools/qr-studio">Premium QR Studio</a></li>
+                        <li><a href="/tools/ai-image">AI Image Generator</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="/tools">Tools Directory</a></li>
+                        <li><a href="/pricing">Pricing Plans</a></li>
+                        <li><a href="/dashboard?tab=api">Developer APIs</a></li>
+                        <li><a href="/blog">SEO Blog</a></li>
+                        <li><a href="/contact">Knowledge Base</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="/contact">About Us</a></li>
+                        <li><a href="/contact">Careers</a></li>
+                        <li><a href="/contact">Privacy Policy</a></li>
+                        <li><a href="/contact">Terms of Service</a></li>
+                        <li><a href="/pricing">SLA Commitments</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Lower Banner -->
+            <div class="footer-bottom">
+                <div class="copyright">
+                    <span>© <span id="current-year"></span> ToolVerse AI. Built with</span>
+                    <i data-lucide="heart" class="heart-icon"></i>
+                    <span>globally. Fully secure.</span>
+                </div>
+                <div class="footer-actions">
+                    <div class="ad-area">Ad Area (Google AdSense Slot)</div>
+                    <div class="language-dropdown">
+                        <button id="lang-btn" class="lang-btn">
+                            <i data-lucide="globe"></i>
+                            <span id="current-lang">English</span>
+                        </button>
+                        <div id="lang-menu" class="lang-menu">
+                            <button class="lang-option">English</button>
+                            <button class="lang-option">Español</button>
+                            <button class="lang-option">Français</button>
+                            <button class="lang-option">Deutsch</button>
+                            <button class="lang-option">Português</button>
+                            <button class="lang-option">日本語</button>
+                            <button class="lang-option">العربية</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Chat Button -->
+    <div class="floating-chat">
+        <button class="chat-btn">
+            <i data-lucide="sparkles"></i>
+            <span>Need Help? Chat Live</span>
+        </button>
+    </div>
+
+    <script src="main.js"></script>
+</body>
 </html>

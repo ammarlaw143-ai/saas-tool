@@ -1,6 +1,6 @@
 # saas-tool
 
-This project now runs as a plain HTML, CSS, and JavaScript site.
+This repository has been converted to a plain HTML, CSS, and JavaScript site.
 
 ## Run locally
 
@@ -10,3 +10,5 @@ npm run dev
 ```
 
 Then open http://localhost:3000
+
+If you want to remove dependencies entirely, delete `node_modules/` and `package-lock.json` after installing `lucide`.
