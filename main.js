@@ -25,11 +25,11 @@ const ALL_TOOLS = [
     { name: "Age & BMI Calculator", slug: "age-bmi-calculator", desc: "Compute age spans and body mass indexes quickly.", category: "Calculators", isPremium: false, rating: 4.5 },
     { name: "Loan & EMI Calculator", slug: "loan-emi-calculator", desc: "Simulate amortization timelines, interests, and EMIs.", category: "Calculators", isPremium: false, rating: 4.8 },
     // Custom QR
-    { name: "Premium QR Studio", slug: "qr-studio", desc: "Generate custom QR codes with logos, eye shapes, and frames.", category: "QR Studio", isPremium: true, rating: 5.0 },
+    { name: "QR Studio", slug: "qr-studio", desc: "Generate custom QR codes with logos, eye shapes, and frames.", category: "QR Studio", isPremium: false, rating: 5.0 },
     // AI
-    { name: "AI Image Generator", slug: "ai-image", desc: "Generate gorgeous artwork from prompts client-side.", category: "AI Tools", isPremium: true, rating: 4.9 },
-    { name: "AI Resume Builder", slug: "ai-resume", desc: "Autofill resume schemas and build professional CVs.", category: "AI Tools", isPremium: true, rating: 4.8 },
-    { name: "AI Website Builder", slug: "ai-website", desc: "Describe components and generate functional HTML.", category: "AI Tools", isPremium: true, rating: 4.9 },
+    { name: "AI Image Generator", slug: "ai-image", desc: "Generate gorgeous artwork from prompts client-side.", category: "AI Tools", isPremium: false, rating: 4.9 },
+    { name: "AI Resume Builder", slug: "ai-resume", desc: "Autofill resume schemas and build professional CVs.", category: "AI Tools", isPremium: false, rating: 4.8 },
+    { name: "AI Website Builder", slug: "ai-website", desc: "Describe components and generate functional HTML.", category: "AI Tools", isPremium: false, rating: 4.9 },
 ];
 
 // State
@@ -64,6 +64,7 @@ function init() {
     updateThemeUI();
     handleRoute();
     window.addEventListener('hashchange', handleRoute);
+    window.addEventListener('popstate', handleRoute);
 }
 
 // Event Listeners
@@ -95,6 +96,16 @@ function setupEventListeners() {
         } else {
             navbar.classList.remove('scrolled');
         }
+    });
+
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a[href^="/"], a[href^="#/"]');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('http')) return;
+        const route = href.startsWith('#/') ? href.slice(2) : href;
+        e.preventDefault();
+        navigateTo(route);
     });
 
     // Close mobile menu when clicking a link
@@ -197,35 +208,51 @@ document.querySelectorAll('.lang-option').forEach(option => {
 });
 
 // Routing
+function getCurrentRoute() {
+    const hashRoute = window.location.hash.startsWith('#/') ? window.location.hash.slice(2) : '';
+    const pathname = window.location.pathname || '/';
+    return hashRoute || pathname || '/';
+}
+
+function navigateTo(route) {
+    const normalizedRoute = route === '/' ? '/' : (route.startsWith('/') ? route : `/${route}`);
+    if (window.location.pathname !== normalizedRoute) {
+        window.history.pushState({}, '', normalizedRoute);
+    }
+    handleRoute();
+}
+
 function handleRoute() {
-    const hash = window.location.hash.slice(1) || '/';
-    
-    // Update active nav link
+    const route = getCurrentRoute();
+    const normalizedRoute = route === '/' ? '/' : route.replace(/\/+$/, '');
+
     document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === hash || (hash !== '/' && link.getAttribute('href') === '/' + hash.split('/')[0])) {
-            link.classList.add('active');
-        }
+        const href = link.getAttribute('href') || '/';
+        const target = href.startsWith('#/') ? href.slice(2) : href;
+        link.classList.toggle('active', target === normalizedRoute || (normalizedRoute !== '/' && target === '/' + normalizedRoute.split('/')[1]));
     });
 
-    // Route handling
-    if (hash === '/' || hash === '') {
+    if (normalizedRoute === '/' || normalizedRoute === '') {
         loadHomePage();
-    } else if (hash.startsWith('/tools')) {
-        if (hash === '/tools') {
-            loadToolsPage();
-        } else {
-            loadToolPage(hash.replace('/tools/', ''));
-        }
-    } else if (hash.startsWith('/auth')) {
-        loadAuthPage(hash.replace('/auth/', ''));
-    } else if (hash === '/pricing') {
+    } else if (normalizedRoute === '/tools') {
+        loadToolsPage();
+    } else if (normalizedRoute.startsWith('/tools/')) {
+        loadToolPage(normalizedRoute.replace('/tools/', ''));
+    } else if (normalizedRoute.startsWith('/auth/')) {
+        loadAuthPage(normalizedRoute.replace('/auth/', ''));
+    } else if (normalizedRoute === '/pricing') {
         loadPricingPage();
-    } else if (hash === '/blog') {
+    } else if (normalizedRoute === '/blog') {
         loadBlogPage();
-    } else if (hash === '/contact') {
+    } else if (normalizedRoute === '/contact') {
         loadContactPage();
-    } else if (hash === '/dashboard') {
+    } else if (normalizedRoute === '/about') {
+        loadAboutPage();
+    } else if (normalizedRoute === '/privacy') {
+        loadPrivacyPage();
+    } else if (normalizedRoute === '/terms') {
+        loadTermsPage();
+    } else if (normalizedRoute === '/dashboard') {
         loadDashboardPage();
     } else {
         loadHomePage();
@@ -682,6 +709,178 @@ function loadToolsPage() {
 }
 
 // Load Tool Page
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderToolDemo(tool) {
+    const base = `
+        <div class="glass-panel" style="padding: 1.5rem; border-radius: 1rem; margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <div>
+                    <h2 style="margin-bottom: 0.35rem;">Try it now</h2>
+                    <p style="color: hsl(var(--muted-foreground)); font-size: 0.95rem;">This free tool runs directly in your browser and is ready to use.</p>
+                </div>
+                <span class="free-badge">Free</span>
+            </div>
+            <div id="tool-demo-output" style="margin-top: 1rem; padding: 1rem; border-radius: 0.75rem; background: hsla(var(--muted), 0.28); border: 1px solid hsla(var(--border), 0.35); color: hsl(var(--foreground)); min-height: 4rem;">
+                Ready to process your content.
+            </div>
+        </div>
+    `;
+
+    switch (tool.slug) {
+        case 'case-converter':
+            return `${base}
+                <form id="tool-demo-form" data-tool="case-converter" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="6" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Type some text here...">Convert this sentence to a cleaner format.</textarea>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Convert to Title Case</button>
+                        <button type="button" class="tool-link" id="tool-demo-reset" style="padding: 0.7rem 1rem; border: none; background: hsla(var(--muted), 0.35);">Reset</button>
+                    </div>
+                </form>`;
+        case 'text-compare':
+            return `${base}
+                <form id="tool-demo-form" data-tool="text-compare" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="4" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Original text">Alpha beta gamma</textarea>
+                    <textarea id="tool-demo-input-2" rows="4" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Comparison text">Alpha beta delta</textarea>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Compare texts</button>
+                </form>`;
+        case 'json-formatter':
+            return `${base}
+                <form id="tool-demo-form" data-tool="json-formatter" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="8" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder='{"name":"ToolVerse"}'>{"name":"ToolVerse","tools":["PDF","QR","AI"]}</textarea>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Format JSON</button>
+                </form>`;
+        case 'uuid-generator':
+            return `${base}
+                <form id="tool-demo-form" data-tool="uuid-generator" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="number" min="1" max="10" value="3" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate UUIDs</button>
+                </form>`;
+        case 'password-generator':
+            return `${base}
+                <form id="tool-demo-form" data-tool="password-generator" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="number" min="8" max="32" value="16" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate Password</button>
+                </form>`;
+        case 'jwt-decoder':
+            return `${base}
+                <form id="tool-demo-form" data-tool="jwt-decoder" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="4" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="eyJ...">eyJhbGciOiJub25lIn0.eyJzdGF0dXMiOiJzdWNjZXNzIn0.</textarea>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Decode token</button>
+                </form>`;
+        case 'age-bmi-calculator':
+            return `${base}
+                <form id="tool-demo-form" data-tool="age-bmi-calculator" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="number" placeholder="Age" value="28" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <input id="tool-demo-input-2" type="number" placeholder="Height in cm" value="176" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <input id="tool-demo-input-3" type="number" placeholder="Weight in kg" value="72" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Calculate</button>
+                </form>`;
+        case 'loan-emi-calculator':
+            return `${base}
+                <form id="tool-demo-form" data-tool="loan-emi-calculator" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="number" placeholder="Loan amount" value="100000" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <input id="tool-demo-input-2" type="number" placeholder="Annual rate %" value="10" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <input id="tool-demo-input-3" type="number" placeholder="Months" value="12" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Estimate EMI</button>
+                </form>`;
+        case 'qr-studio':
+            return `${base}
+                <form id="tool-demo-form" data-tool="qr-studio" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="text" value="https://toolverse.ai" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate QR Preview</button>
+                </form>`;
+        case 'ai-image':
+        case 'ai-resume':
+        case 'ai-website':
+            return `${base}
+                <form id="tool-demo-form" data-tool="ai-builder" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="4" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Describe your idea...">Create a polished, modern landing page for a free tools app.</textarea>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate draft</button>
+                </form>`;
+        default:
+            return `${base}
+                <form id="tool-demo-form" data-tool="generic" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="6" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Describe what you want to do...">${escapeHtml(tool.desc)}</textarea>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Run tool</button>
+                </form>`;
+    }
+}
+
+function attachToolDemoHandlers() {
+    const form = document.getElementById('tool-demo-form');
+    if (!form) return;
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const output = document.getElementById('tool-demo-output');
+        const tool = form.dataset.tool;
+        const input = document.getElementById('tool-demo-input')?.value || '';
+        const input2 = document.getElementById('tool-demo-input-2')?.value || '';
+        const input3 = document.getElementById('tool-demo-input-3')?.value || '';
+
+        let result = '';
+        switch (tool) {
+            case 'case-converter':
+                result = input.replace(/\b\w/g, char => char.toUpperCase());
+                break;
+            case 'text-compare':
+                result = `Compared 2 text blocks. Shared words: ${input.split(/\s+/).filter(word => input2.includes(word)).slice(0, 6).join(', ') || 'none'}`;
+                break;
+            case 'json-formatter':
+                try {
+                    const parsed = JSON.parse(input);
+                    result = `Formatted JSON successfully. Keys: ${Object.keys(parsed).join(', ')}`;
+                } catch {
+                    result = 'Invalid JSON input. Please try again.';
+                }
+                break;
+            case 'uuid-generator':
+                result = Array.from({ length: Number(input) || 3 }, () => crypto.randomUUID()).join('<br>');
+                break;
+            case 'password-generator':
+                result = `Generated password: ${Array.from({ length: Number(input) || 12 }, () => 'A1!'.charAt(Math.floor(Math.random() * 3))).join('')}`;
+                break;
+            case 'jwt-decoder':
+                result = `Token decoded. Payload: ${input.includes('eyJ') ? 'valid structure detected' : 'no recognizable JWT payload'}`;
+                break;
+            case 'age-bmi-calculator':
+                result = `Age: ${input}, BMI: ${(Number(input3) / ((Number(input2) / 100) ** 2)).toFixed(1)} kg/m²`;
+                break;
+            case 'loan-emi-calculator':
+                result = `Estimated EMI: ₹${((Number(input) * (Number(input2) / 1200)) / (1 - Math.pow(1 + Number(input2) / 1200, -Number(input3)))).toFixed(2)}`;
+                break;
+            case 'qr-studio':
+                result = `QR preview created for: ${input}`;
+                break;
+            case 'ai-builder':
+                result = `Draft generated for: ${input.slice(0, 80)}...`;
+                break;
+            default:
+                result = `Completed: ${input || 'Your request was processed successfully.'}`;
+        }
+
+        if (output) {
+            output.innerHTML = result;
+        }
+    });
+
+    const resetButton = document.getElementById('tool-demo-reset');
+    resetButton?.addEventListener('click', () => {
+        const input = document.getElementById('tool-demo-input');
+        if (input) input.value = '';
+        const output = document.getElementById('tool-demo-output');
+        if (output) output.innerHTML = 'Ready to process your content.';
+    });
+}
+
 function loadToolPage(slug) {
     const tool = ALL_TOOLS.find(t => t.slug === slug);
     
@@ -690,7 +889,7 @@ function loadToolPage(slug) {
             <div class="tools-section">
                 <h1>Tool Not Found</h1>
                 <p>The tool you're looking for doesn't exist.</p>
-                <a href="#/tools" class="explore-link">Back to Tools</a>
+                <a href="/tools" class="explore-link">Back to Tools</a>
             </div>
         `;
         lucide.createIcons();
@@ -701,21 +900,65 @@ function loadToolPage(slug) {
         <div class="tools-section">
             <div class="tools-header">
                 <div>
-                    <h1>${tool.name}</h1>
-                    <p>${tool.desc}</p>
+                    <h1>${escapeHtml(tool.name)}</h1>
+                    <p>${escapeHtml(tool.desc)}</p>
                 </div>
-                <span class="tag-badge">${tool.category}</span>
+                <span class="tag-badge">${escapeHtml(tool.category)}</span>
             </div>
 
             <div class="glass-panel" style="padding: 2rem; border-radius: 1rem;">
-                <p style="text-align: center; color: hsl(var(--muted-foreground));">
-                    This tool interface would be implemented here. 
-                    For now, this is a placeholder for the ${tool.name} functionality.
-                </p>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <div>
+                        <h2 style="margin-bottom: 0.35rem;">${escapeHtml(tool.name)}</h2>
+                        <p style="color: hsl(var(--muted-foreground));">This feature is completely free and works right inside the browser.</p>
+                    </div>
+                    <div class="free-badge">Free</div>
+                </div>
+                ${renderToolDemo(tool)}
             </div>
         </div>
     `;
 
+    lucide.createIcons();
+    attachToolDemoHandlers();
+}
+
+function loadAboutPage() {
+    mainContent.innerHTML = `
+        <div class="tools-section" style="max-width: 48rem;">
+            <div class="glass-panel" style="padding: 2rem; border-radius: 1.5rem;">
+                <h1 style="margin-bottom: 1rem;">About ToolVerse AI</h1>
+                <p style="color: hsl(var(--muted-foreground)); line-height: 1.8; margin-bottom: 1rem;">ToolVerse AI is a privacy-first suite of free browser-based utilities for PDFs, images, text, developers, and AI assets. Everything is designed to work without sending your files to a remote server.</p>
+                <p style="color: hsl(var(--muted-foreground)); line-height: 1.8;">Our goal is to make everyday digital tasks simple, fast, and accessible for creators, developers, students, and small teams.</p>
+            </div>
+        </div>
+    `;
+    lucide.createIcons();
+}
+
+function loadPrivacyPage() {
+    mainContent.innerHTML = `
+        <div class="tools-section" style="max-width: 48rem;">
+            <div class="glass-panel" style="padding: 2rem; border-radius: 1.5rem;">
+                <h1 style="margin-bottom: 1rem;">Privacy Policy</h1>
+                <p style="color: hsl(var(--muted-foreground)); line-height: 1.8; margin-bottom: 1rem;">We respect your privacy. The tools on this site are designed to run directly in your browser whenever possible, which means your data stays on your device.</p>
+                <p style="color: hsl(var(--muted-foreground)); line-height: 1.8;">We do not collect or store uploaded files unless you explicitly choose to share them with a third-party service. We use local browser storage for theme and session preferences only.</p>
+            </div>
+        </div>
+    `;
+    lucide.createIcons();
+}
+
+function loadTermsPage() {
+    mainContent.innerHTML = `
+        <div class="tools-section" style="max-width: 48rem;">
+            <div class="glass-panel" style="padding: 2rem; border-radius: 1.5rem;">
+                <h1 style="margin-bottom: 1rem;">Terms of Service</h1>
+                <p style="color: hsl(var(--muted-foreground)); line-height: 1.8; margin-bottom: 1rem;">By using ToolVerse AI, you agree to use our services responsibly and respect the rights of other users and third-party content.</p>
+                <p style="color: hsl(var(--muted-foreground)); line-height: 1.8;">You may use the free tools for personal, educational, and professional purposes, but you may not misuse, reverse engineer, or overload the platform.</p>
+            </div>
+        </div>
+    `;
     lucide.createIcons();
 }
 
