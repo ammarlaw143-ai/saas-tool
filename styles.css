@@ -30,10 +30,10 @@
     --ring: 240 4.9% 83.9%;
     --radius: 0.75rem;
     
-    --indigo-500: 99 102 241;
-    --indigo-600: 79 70 229;
-    --purple-500: 168 85 247;
-    --pink-500: 236 72 153;
+    --indigo-500: 238 92% 67%;
+    --indigo-600: 255 75% 59%;
+    --purple-500: 280 84% 64%;
+    --pink-500: 330 79% 61%;
 }
 
 .light {
@@ -1258,6 +1258,7 @@ body {
     color: white;
     border-color: hsla(var(--indigo-500), 0.3);
     box-shadow: 0 8px 24px -18px rgba(99, 102, 241, 0.8);
+    background-image: none;
 }
 
 .category-btn:not(.active) {
