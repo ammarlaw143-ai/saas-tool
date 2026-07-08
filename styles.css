@@ -900,6 +900,32 @@ body {
     animation: spin 3s linear infinite;
 }
 
+.signup-modal {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 9999;
+}
+
+.signup-modal .signup-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(2,6,23,0.6);
+}
+
+.signup-modal .signup-panel {
+    position: relative;
+    width: min(680px, 92%);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    z-index: 2;
+}
+
+.newsletter-removed {
+    padding-top: 0.5rem;
+}
+
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }

@@ -38,6 +38,11 @@ let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 let searchQuery = '';
 let activeCategory = 'All';
 let openFaq = null;
+// Usage limits (free)
+const USAGE_LIMIT = 5; // number of free actions before prompting
+const REMIND_DELAY_MS = 2 * 60 * 1000; // 2 minutes reminder for 'Do it later'
+const USAGE_KEY = 'tv_usage_count';
+const NEXT_PROMPT_KEY = 'tv_next_prompt_at';
 
 // DOM Elements
 const navbar = document.getElementById('navbar');
@@ -62,6 +67,7 @@ function init() {
     setupEventListeners();
     updateAuthUI();
     updateThemeUI();
+    setupSignupPrompt();
     handleRoute();
     window.addEventListener('hashchange', handleRoute);
     window.addEventListener('popstate', handleRoute);
@@ -88,6 +94,15 @@ function setupEventListeners() {
 
     // Newsletter form
     newsletterForm?.addEventListener('submit', handleNewsletter);
+
+    // Chat button -> open signup/help prompt
+    const chatBtn = document.querySelector('.chat-btn');
+    chatBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        // If user not logged in, show signup prompt, else open chat (placeholder)
+        if (!isLoggedIn) showSignupPrompt();
+        else alert('Chat is currently unavailable in this demo.');
+    });
 
     // Scroll effect for navbar
     window.addEventListener('scroll', () => {
@@ -157,6 +172,59 @@ function updateThemeUI() {
             toggle.setAttribute('aria-pressed', currentTheme === 'light' ? 'true' : 'false');
         }
     });
+}
+
+function setupSignupPrompt() {
+    const modal = document.getElementById('signup-prompt');
+    const nowBtn = document.getElementById('signup-now');
+    const laterBtn = document.getElementById('signup-later');
+
+    nowBtn?.addEventListener('click', (e) => {
+        // Redirect to signup and mark logged in for demo
+        localStorage.setItem('isLoggedIn', 'true');
+        isLoggedIn = true;
+        localStorage.removeItem(USAGE_KEY);
+        localStorage.removeItem(NEXT_PROMPT_KEY);
+        hideSignupPrompt();
+        navigateTo('/auth/signup');
+    });
+
+    laterBtn?.addEventListener('click', (e) => {
+        const next = Date.now() + REMIND_DELAY_MS;
+        localStorage.setItem(NEXT_PROMPT_KEY, String(next));
+        hideSignupPrompt();
+    });
+}
+
+function showSignupPrompt() {
+    const modal = document.getElementById('signup-prompt');
+    if (!modal) return;
+    modal.hidden = false;
+}
+
+function hideSignupPrompt() {
+    const modal = document.getElementById('signup-prompt');
+    if (!modal) return;
+    modal.hidden = true;
+}
+
+function recordToolUsage() {
+    try {
+        if (isLoggedIn) return; // no limits for signed in users
+        const raw = localStorage.getItem(USAGE_KEY) || '0';
+        let count = Number(raw) || 0;
+        count += 1;
+        localStorage.setItem(USAGE_KEY, String(count));
+
+        const nextPromptRaw = localStorage.getItem(NEXT_PROMPT_KEY);
+        const nextPromptAt = nextPromptRaw ? Number(nextPromptRaw) : 0;
+
+        if (count >= USAGE_LIMIT && Date.now() >= (nextPromptAt || 0)) {
+            showSignupPrompt();
+        }
+    } catch (e) {
+        // ignore storage errors
+    }
 }
 
 // Mobile Menu
@@ -1017,6 +1085,7 @@ function attachToolDemoHandlers() {
 
             if (output) {
                 output.innerHTML = result;
+                try { recordToolUsage(); } catch (e) { /* ignore */ }
             }
         } catch (error) {
             output.innerHTML = `<span style="color: #f87171;">${escapeHtml(error.message || 'Processing failed.')}</span>`;
