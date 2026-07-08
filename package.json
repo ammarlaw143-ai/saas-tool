@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo \"Static site already ready\""
   },
   "dependencies": {
     "next": "15.1.6",
