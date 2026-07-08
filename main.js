@@ -735,6 +735,44 @@ function renderToolDemo(tool) {
     `;
 
     switch (tool.slug) {
+        case 'merge-pdf':
+            return `${base}
+                <form id="tool-demo-form" data-tool="merge-pdf" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="application/pdf" multiple style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Merge PDFs</button>
+                </form>`;
+        case 'compress-pdf':
+            return `${base}
+                <form id="tool-demo-form" data-tool="compress-pdf" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="application/pdf" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Optimize PDF</button>
+                </form>`;
+        case 'image-compressor':
+            return `${base}
+                <form id="tool-demo-form" data-tool="image-compressor" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="image/*" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                        <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            Output format
+                            <select id="tool-demo-format" style="padding: 0.7rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));">
+                                <option value="image/jpeg">JPEG</option>
+                                <option value="image/webp">WEBP</option>
+                                <option value="image/png">PNG</option>
+                            </select>
+                        </label>
+                        <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            Quality
+                            <input id="tool-demo-quality" type="range" min="0.3" max="0.95" step="0.05" value="0.72" />
+                        </label>
+                    </div>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Compress image</button>
+                </form>`;
+        case 'qr-studio':
+            return `${base}
+                <form id="tool-demo-form" data-tool="qr-studio" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="text" value="https://toolverse.ai" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate QR preview</button>
+                </form>`;
         case 'case-converter':
             return `${base}
                 <form id="tool-demo-form" data-tool="case-converter" style="display: grid; gap: 1rem; margin-top: 1rem;">
@@ -791,12 +829,6 @@ function renderToolDemo(tool) {
                     <input id="tool-demo-input-3" type="number" placeholder="Months" value="12" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
                     <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Estimate EMI</button>
                 </form>`;
-        case 'qr-studio':
-            return `${base}
-                <form id="tool-demo-form" data-tool="qr-studio" style="display: grid; gap: 1rem; margin-top: 1rem;">
-                    <input id="tool-demo-input" type="text" value="https://toolverse.ai" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
-                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate QR Preview</button>
-                </form>`;
         case 'ai-image':
         case 'ai-resume':
         case 'ai-website':
@@ -814,61 +846,180 @@ function renderToolDemo(tool) {
     }
 }
 
+async function processPdfMerge(files) {
+    if (!window.pdfLib || !files || files.length < 2) {
+        throw new Error('Please upload at least two PDF files.');
+    }
+
+    const { PDFDocument } = window.pdfLib;
+    const mergedPdf = await PDFDocument.create();
+
+    for (const file of Array.from(files)) {
+        const bytes = await file.arrayBuffer();
+        const pdf = await PDFDocument.load(bytes);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach(page => mergedPdf.addPage(page));
+    }
+
+    const pdfBytes = await mergedPdf.save();
+    return {
+        blob: new Blob([pdfBytes], { type: 'application/pdf' }),
+        filename: 'merged.pdf'
+    };
+}
+
+async function processPdfCompress(file) {
+    if (!window.pdfLib || !file) {
+        throw new Error('Please upload a PDF file.');
+    }
+
+    const { PDFDocument } = window.pdfLib;
+    const bytes = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(bytes);
+    const pdfBytes = await pdf.save({ useObjectStreams: false });
+
+    return {
+        blob: new Blob([pdfBytes], { type: 'application/pdf' }),
+        filename: `optimized-${file.name.replace(/\.pdf$/i, '')}.pdf`
+    };
+}
+
+function processImageCompress(file, format, quality) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+            canvas.width = Math.max(1, Math.round(img.width * scale));
+            canvas.height = Math.max(1, Math.round(img.height * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob((blob) => {
+                URL.revokeObjectURL(objectUrl);
+                if (!blob) {
+                    reject(new Error('Unable to process image.'));
+                    return;
+                }
+                resolve({
+                    blob,
+                    filename: `compressed.${format === 'image/png' ? 'png' : format === 'image/webp' ? 'webp' : 'jpg'}`
+                });
+            }, format, Number(quality) || 0.72);
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Unable to read the selected image.'));
+        };
+
+        img.src = objectUrl;
+    });
+}
+
+async function processQrGeneration(text) {
+    if (!window.QRCode || !text) {
+        throw new Error('Please enter some text to turn into a QR code.');
+    }
+
+    const canvas = document.createElement('canvas');
+    await window.QRCode.toCanvas(canvas, text, {
+        width: 480,
+        margin: 2,
+        color: { dark: '#111827', light: '#ffffff' }
+    });
+
+    return {
+        blob: await new Promise((resolve, reject) => {
+            canvas.toBlob((blob) => {
+                if (!blob) reject(new Error('Unable to generate QR image.'));
+                else resolve(blob);
+            }, 'image/png');
+        }),
+        filename: 'qr-code.png'
+    };
+}
+
 function attachToolDemoHandlers() {
     const form = document.getElementById('tool-demo-form');
     if (!form) return;
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const output = document.getElementById('tool-demo-output');
         const tool = form.dataset.tool;
-        const input = document.getElementById('tool-demo-input')?.value || '';
-        const input2 = document.getElementById('tool-demo-input-2')?.value || '';
-        const input3 = document.getElementById('tool-demo-input-3')?.value || '';
+        const input = document.getElementById('tool-demo-input');
+        const format = document.getElementById('tool-demo-format')?.value || 'image/jpeg';
+        const quality = document.getElementById('tool-demo-quality')?.value || '0.72';
 
-        let result = '';
-        switch (tool) {
-            case 'case-converter':
-                result = input.replace(/\b\w/g, char => char.toUpperCase());
-                break;
-            case 'text-compare':
-                result = `Compared 2 text blocks. Shared words: ${input.split(/\s+/).filter(word => input2.includes(word)).slice(0, 6).join(', ') || 'none'}`;
-                break;
-            case 'json-formatter':
-                try {
-                    const parsed = JSON.parse(input);
-                    result = `Formatted JSON successfully. Keys: ${Object.keys(parsed).join(', ')}`;
-                } catch {
-                    result = 'Invalid JSON input. Please try again.';
-                }
-                break;
-            case 'uuid-generator':
-                result = Array.from({ length: Number(input) || 3 }, () => crypto.randomUUID()).join('<br>');
-                break;
-            case 'password-generator':
-                result = `Generated password: ${Array.from({ length: Number(input) || 12 }, () => 'A1!'.charAt(Math.floor(Math.random() * 3))).join('')}`;
-                break;
-            case 'jwt-decoder':
-                result = `Token decoded. Payload: ${input.includes('eyJ') ? 'valid structure detected' : 'no recognizable JWT payload'}`;
-                break;
-            case 'age-bmi-calculator':
-                result = `Age: ${input}, BMI: ${(Number(input3) / ((Number(input2) / 100) ** 2)).toFixed(1)} kg/m²`;
-                break;
-            case 'loan-emi-calculator':
-                result = `Estimated EMI: ₹${((Number(input) * (Number(input2) / 1200)) / (1 - Math.pow(1 + Number(input2) / 1200, -Number(input3)))).toFixed(2)}`;
-                break;
-            case 'qr-studio':
-                result = `QR preview created for: ${input}`;
-                break;
-            case 'ai-builder':
-                result = `Draft generated for: ${input.slice(0, 80)}...`;
-                break;
-            default:
-                result = `Completed: ${input || 'Your request was processed successfully.'}`;
-        }
+        if (!output) return;
+        output.innerHTML = '<span>Processing...</span>';
 
-        if (output) {
-            output.innerHTML = result;
+        try {
+            let result = '';
+            let fileName = '';
+            let blob = null;
+
+            switch (tool) {
+                case 'merge-pdf':
+                    ({ blob, filename: fileName } = await processPdfMerge(input?.files || []));
+                    result = `<strong>PDFs merged successfully.</strong><br><a href="${URL.createObjectURL(blob)}" download="${fileName}" style="display: inline-block; margin-top: 0.75rem; color: hsl(var(--indigo-400));">Download ${fileName}</a>`;
+                    break;
+                case 'compress-pdf':
+                    ({ blob, filename: fileName } = await processPdfCompress(input?.files?.[0]));
+                    result = `<strong>PDF optimized successfully.</strong><br><a href="${URL.createObjectURL(blob)}" download="${fileName}" style="display: inline-block; margin-top: 0.75rem; color: hsl(var(--indigo-400));">Download ${fileName}</a>`;
+                    break;
+                case 'image-compressor':
+                    ({ blob, filename: fileName } = await processImageCompress(input?.files?.[0], format, quality));
+                    result = `<strong>Image compressed successfully.</strong><br><a href="${URL.createObjectURL(blob)}" download="${fileName}" style="display: inline-block; margin-top: 0.75rem; color: hsl(var(--indigo-400));">Download ${fileName}</a>`;
+                    break;
+                case 'qr-studio':
+                    ({ blob, filename: fileName } = await processQrGeneration(input?.value || ''));
+                    result = `<strong>QR code generated successfully.</strong><br><a href="${URL.createObjectURL(blob)}" download="${fileName}" style="display: inline-block; margin-top: 0.75rem; color: hsl(var(--indigo-400));">Download ${fileName}</a>`;
+                    break;
+                case 'case-converter':
+                    result = (input?.value || '').replace(/\b\w/g, char => char.toUpperCase());
+                    break;
+                case 'text-compare':
+                    result = `Compared 2 text blocks. Shared words: ${input?.value?.split(/\s+/).filter(word => document.getElementById('tool-demo-input-2')?.value?.includes(word)).slice(0, 6).join(', ') || 'none'}`;
+                    break;
+                case 'json-formatter':
+                    try {
+                        const parsed = JSON.parse(input?.value || '{}');
+                        result = `Formatted JSON successfully. Keys: ${Object.keys(parsed).join(', ')}`;
+                    } catch {
+                        result = 'Invalid JSON input. Please try again.';
+                    }
+                    break;
+                case 'uuid-generator':
+                    result = Array.from({ length: Number(input?.value) || 3 }, () => crypto.randomUUID()).join('<br>');
+                    break;
+                case 'password-generator':
+                    result = `Generated password: ${Array.from({ length: Number(input?.value) || 12 }, () => 'A1!'.charAt(Math.floor(Math.random() * 3))).join('')}`;
+                    break;
+                case 'jwt-decoder':
+                    result = `Token decoded. Payload: ${input?.value?.includes('eyJ') ? 'valid structure detected' : 'no recognizable JWT payload'}`;
+                    break;
+                case 'age-bmi-calculator':
+                    result = `Age: ${input?.value}, BMI: ${(Number(document.getElementById('tool-demo-input-3')?.value) / ((Number(document.getElementById('tool-demo-input-2')?.value) / 100) ** 2)).toFixed(1)} kg/m²`;
+                    break;
+                case 'loan-emi-calculator':
+                    result = `Estimated EMI: ₹${((Number(input?.value) * (Number(document.getElementById('tool-demo-input-2')?.value) / 1200)) / (1 - Math.pow(1 + Number(document.getElementById('tool-demo-input-2')?.value) / 1200, -Number(document.getElementById('tool-demo-input-3')?.value)))).toFixed(2)}`;
+                    break;
+                case 'ai-builder':
+                    result = `Draft generated for: ${(input?.value || '').slice(0, 80)}...`;
+                    break;
+                default:
+                    result = `Completed: ${input?.value || 'Your request was processed successfully.'}`;
+            }
+
+            if (output) {
+                output.innerHTML = result;
+            }
+        } catch (error) {
+            output.innerHTML = `<span style="color: #f87171;">${escapeHtml(error.message || 'Processing failed.')}</span>`;
         }
     });
 
