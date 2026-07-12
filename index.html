@@ -45,9 +45,8 @@
                 <!-- Desktop Nav -->
                 <nav class="desktop-nav">
                     <a href="/tools" class="nav-link">All Tools</a>
-                    <a href="/pricing" class="nav-link">Pricing</a>
                     <a href="/blog" class="nav-link">Blog</a>
-                    <a href="/contact" class="nav-link">Contact</a>
+                    <a href="/about" class="nav-link">About</a>
                 </nav>
 
                 <!-- Right Action Items -->
@@ -102,9 +101,8 @@
         <div id="mobile-menu" class="mobile-menu">
             <div class="mobile-menu-content">
                 <a href="/tools" class="mobile-nav-link">All Tools</a>
-                <a href="/pricing" class="mobile-nav-link">Pricing</a>
                 <a href="/blog" class="mobile-nav-link">Blog</a>
-                <a href="/contact" class="mobile-nav-link">Contact</a>
+                <a href="/about" class="mobile-nav-link">About</a>
                 <div class="mobile-auth-section">
                     <a href="/auth/login" class="mobile-sign-in">Sign In</a>
                     <a href="/auth/signup" class="mobile-sign-up">Sign Up</a>
@@ -134,10 +132,10 @@
                         The premier, privacy-focused tool ecosystem. Seamlessly convert files, encode code vectors, analyze statistics, and build AI assets entirely in your browser.
                     </p>
 
-                    <!-- Newsletter removed per user request -->
-                    <div class="newsletter-removed">
+                    <!-- Developer tools description -->
+                    <div>
                         <h4>Developer Tools</h4>
-                        <p style="color: hsl(var(--muted-foreground));">All core tools are free. Sign up for advanced features.</p>
+                        <p style="color: hsl(var(--muted-foreground));">All tools are 100% free, run entirely in your web browser, and respect your privacy.</p>
                     </div>
                 </div>
 
@@ -157,21 +155,16 @@
                     <h4>Resources</h4>
                     <ul>
                         <li><a href="/tools">Tools Directory</a></li>
-                        <li><a href="/pricing">Pricing Plans</a></li>
-                        <li><a href="/dashboard?tab=api">Developer APIs</a></li>
                         <li><a href="/blog">SEO Blog</a></li>
-                        <li><a href="/contact">Knowledge Base</a></li>
+                        <li><a href="/about">About Us</a></li>
                     </ul>
                 </div>
 
                 <div class="footer-links">
                     <h4>Company</h4>
                     <ul>
-                        <li><a href="/about">About Us</a></li>
-                        <li><a href="/contact">Careers</a></li>
                         <li><a href="/privacy">Privacy Policy</a></li>
                         <li><a href="/terms">Terms of Service</a></li>
-                        <li><a href="/pricing">SLA Commitments</a></li>
                     </ul>
                 </div>
             </div>
@@ -205,26 +198,7 @@
         </div>
     </footer>
 
-    <!-- Floating Chat Button -->
-    <div class="floating-chat">
-        <button class="chat-btn">
-            <i data-lucide="sparkles"></i>
-            <span>Need Help? Chat Live</span>
-        </button>
-    </div>
 
-    <!-- Signup prompt modal -->
-    <div id="signup-prompt" class="signup-modal" hidden>
-        <div class="signup-overlay"></div>
-        <div class="signup-panel glass-panel">
-            <h3>Continue using free tools — sign up for more</h3>
-            <p style="color: hsl(var(--muted-foreground));">You've reached the free usage limit. Create an account to continue uninterrupted or choose "Do it later" to be reminded shortly.</p>
-            <div style="display:flex; gap:0.75rem; margin-top:1rem; justify-content:flex-end;">
-                <button id="signup-later" class="theme-toggle">Do it later</button>
-                <button id="signup-now" class="sign-up-btn">Sign Up</button>
-            </div>
-        </div>
-    </div>
 
     <script src="main.js"></script>
 </body>

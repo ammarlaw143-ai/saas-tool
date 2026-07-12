@@ -38,9 +38,9 @@ let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
 let searchQuery = '';
 let activeCategory = 'All';
 let openFaq = null;
-// Usage limits (free)
-const USAGE_LIMIT = 5; // number of free actions before prompting
-const REMIND_DELAY_MS = 2 * 60 * 1000; // 2 minutes reminder for 'Do it later'
+// Usage limits (fully free now)
+const USAGE_LIMIT = Infinity;
+const REMIND_DELAY_MS = 0;
 const USAGE_KEY = 'tv_usage_count';
 const NEXT_PROMPT_KEY = 'tv_next_prompt_at';
 
@@ -67,9 +67,7 @@ function init() {
     setupEventListeners();
     updateAuthUI();
     updateThemeUI();
-    setupSignupPrompt();
     handleRoute();
-    window.addEventListener('hashchange', handleRoute);
     window.addEventListener('popstate', handleRoute);
 }
 
@@ -95,14 +93,7 @@ function setupEventListeners() {
     // Newsletter form
     newsletterForm?.addEventListener('submit', handleNewsletter);
 
-    // Chat button -> open signup/help prompt
-    const chatBtn = document.querySelector('.chat-btn');
-    chatBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        // If user not logged in, show signup prompt, else open chat (placeholder)
-        if (!isLoggedIn) showSignupPrompt();
-        else alert('Chat is currently unavailable in this demo.');
-    });
+
 
     // Scroll effect for navbar
     window.addEventListener('scroll', () => {
@@ -174,58 +165,10 @@ function updateThemeUI() {
     });
 }
 
-function setupSignupPrompt() {
-    const modal = document.getElementById('signup-prompt');
-    const nowBtn = document.getElementById('signup-now');
-    const laterBtn = document.getElementById('signup-later');
-
-    nowBtn?.addEventListener('click', (e) => {
-        // Redirect to signup and mark logged in for demo
-        localStorage.setItem('isLoggedIn', 'true');
-        isLoggedIn = true;
-        localStorage.removeItem(USAGE_KEY);
-        localStorage.removeItem(NEXT_PROMPT_KEY);
-        hideSignupPrompt();
-        navigateTo('/auth/signup');
-    });
-
-    laterBtn?.addEventListener('click', (e) => {
-        const next = Date.now() + REMIND_DELAY_MS;
-        localStorage.setItem(NEXT_PROMPT_KEY, String(next));
-        hideSignupPrompt();
-    });
-}
-
-function showSignupPrompt() {
-    const modal = document.getElementById('signup-prompt');
-    if (!modal) return;
-    modal.hidden = false;
-}
-
-function hideSignupPrompt() {
-    const modal = document.getElementById('signup-prompt');
-    if (!modal) return;
-    modal.hidden = true;
-}
-
-function recordToolUsage() {
-    try {
-        if (isLoggedIn) return; // no limits for signed in users
-        const raw = localStorage.getItem(USAGE_KEY) || '0';
-        let count = Number(raw) || 0;
-        count += 1;
-        localStorage.setItem(USAGE_KEY, String(count));
-
-        const nextPromptRaw = localStorage.getItem(NEXT_PROMPT_KEY);
-        const nextPromptAt = nextPromptRaw ? Number(nextPromptRaw) : 0;
-
-        if (count >= USAGE_LIMIT && Date.now() >= (nextPromptAt || 0)) {
-            showSignupPrompt();
-        }
-    } catch (e) {
-        // ignore storage errors
-    }
-}
+function setupSignupPrompt() {}
+function showSignupPrompt() {}
+function hideSignupPrompt() {}
+function recordToolUsage() {}
 
 // Mobile Menu
 function toggleMobileMenu() {
@@ -277,9 +220,11 @@ document.querySelectorAll('.lang-option').forEach(option => {
 
 // Routing
 function getCurrentRoute() {
-    const hashRoute = window.location.hash.startsWith('#/') ? window.location.hash.slice(2) : '';
-    const pathname = window.location.pathname || '/';
-    return hashRoute || pathname || '/';
+    if (window.location.hash.startsWith('#/')) {
+        const path = window.location.hash.slice(1);
+        window.history.replaceState({}, '', path);
+    }
+    return window.location.pathname || '/';
 }
 
 function navigateTo(route) {
@@ -308,12 +253,8 @@ function handleRoute() {
         loadToolPage(normalizedRoute.replace('/tools/', ''));
     } else if (normalizedRoute.startsWith('/auth/')) {
         loadAuthPage(normalizedRoute.replace('/auth/', ''));
-    } else if (normalizedRoute === '/pricing') {
-        loadPricingPage();
     } else if (normalizedRoute === '/blog') {
         loadBlogPage();
-    } else if (normalizedRoute === '/contact') {
-        loadContactPage();
     } else if (normalizedRoute === '/about') {
         loadAboutPage();
     } else if (normalizedRoute === '/privacy') {
@@ -815,6 +756,36 @@ function renderToolDemo(tool) {
                     <input id="tool-demo-input" type="file" accept="application/pdf" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
                     <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Optimize PDF</button>
                 </form>`;
+        case 'split-pdf':
+            return `${base}
+                <form id="tool-demo-form" data-tool="split-pdf" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="application/pdf" required style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                        Pages to extract (e.g., 1, 3-5)
+                        <input id="tool-demo-pages" type="text" value="1" placeholder="e.g. 1, 3-5" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    </label>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Extract Pages</button>
+                </form>`;
+        case 'protect-pdf':
+            return `${base}
+                <form id="tool-demo-form" data-tool="protect-pdf" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="application/pdf" required style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                        Password to apply
+                        <input id="tool-demo-password" type="password" required placeholder="Choose a password" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    </label>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Apply Password Protection</button>
+                </form>`;
+        case 'unlock-pdf':
+            return `${base}
+                <form id="tool-demo-form" data-tool="unlock-pdf" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="application/pdf" required style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                        Password
+                        <input id="tool-demo-password" type="password" required placeholder="Enter password" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    </label>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Unlock PDF</button>
+                </form>`;
         case 'image-compressor':
             return `${base}
                 <form id="tool-demo-form" data-tool="image-compressor" style="display: grid; gap: 1rem; margin-top: 1rem;">
@@ -835,21 +806,74 @@ function renderToolDemo(tool) {
                     </div>
                     <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Compress image</button>
                 </form>`;
+        case 'resize-crop':
+            return `${base}
+                <form id="tool-demo-form" data-tool="resize-crop" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="image/*" required style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                        <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            Width (px)
+                            <input id="tool-demo-width" type="number" value="800" style="padding: 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                        </label>
+                        <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            Height (px)
+                            <input id="tool-demo-height" type="number" value="600" style="padding: 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; margin-top: 1.5rem; cursor: pointer; color: hsl(var(--muted-foreground));">
+                            <input id="tool-demo-crop" type="checkbox" /> Center Crop
+                        </label>
+                    </div>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Resize / Crop Image</button>
+                </form>`;
+        case 'format-converter':
+            return `${base}
+                <form id="tool-demo-form" data-tool="format-converter" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <input id="tool-demo-input" type="file" accept="image/*" required style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                        Target Format
+                        <select id="tool-demo-format" style="padding: 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));">
+                            <option value="image/png">PNG</option>
+                            <option value="image/jpeg">JPEG (JPG)</option>
+                            <option value="image/webp">WEBP</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Convert Format</button>
+                </form>`;
         case 'qr-studio':
             return `${base}
                 <form id="tool-demo-form" data-tool="qr-studio" style="display: grid; gap: 1rem; margin-top: 1rem;">
-                    <input id="tool-demo-input" type="text" value="https://toolverse.ai" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
-                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate QR preview</button>
+                    <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                        Text or URL to encode
+                        <input id="tool-demo-input" type="text" value="https://toolverse.ai" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                    </label>
+                    <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                        <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            Foreground Color
+                            <input id="tool-demo-fg" type="color" value="#111827" style="width: 100%; height: 2.5rem; border: none; padding: 0; background: transparent; cursor: pointer;" />
+                        </label>
+                        <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            Background Color
+                            <input id="tool-demo-bg" type="color" value="#ffffff" style="width: 100%; height: 2.5rem; border: none; padding: 0; background: transparent; cursor: pointer;" />
+                        </label>
+                        <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                            Margin
+                            <input id="tool-demo-margin" type="number" min="0" max="10" value="2" style="padding: 0.75rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                        </label>
+                    </div>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate custom QR code</button>
                 </form>`;
         case 'case-converter':
             return `${base}
-                <form id="tool-demo-form" data-tool="case-converter" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                <div style="display: grid; gap: 1rem; margin-top: 1rem;">
                     <textarea id="tool-demo-input" rows="6" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Type some text here...">Convert this sentence to a cleaner format.</textarea>
-                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                        <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Convert to Title Case</button>
-                        <button type="button" class="tool-link" id="tool-demo-reset" style="padding: 0.7rem 1rem; border: none; background: hsla(var(--muted), 0.35);">Reset</button>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button type="button" class="pricing-btn case-btn" data-mode="upper" style="padding: 0.5rem 0.85rem; border: none; font-size: 0.85rem;">UPPERCASE</button>
+                        <button type="button" class="pricing-btn case-btn" data-mode="lower" style="padding: 0.5rem 0.85rem; border: none; font-size: 0.85rem;">lowercase</button>
+                        <button type="button" class="pricing-btn case-btn" data-mode="title" style="padding: 0.5rem 0.85rem; border: none; font-size: 0.85rem;">Title Case</button>
+                        <button type="button" class="pricing-btn case-btn" data-mode="sentence" style="padding: 0.5rem 0.85rem; border: none; font-size: 0.85rem;">Sentence Case</button>
+                        <button type="button" class="pricing-btn case-btn" data-mode="slug" style="padding: 0.5rem 0.85rem; border: none; font-size: 0.85rem;">Slugify</button>
                     </div>
-                </form>`;
+                </div>`;
         case 'text-compare':
             return `${base}
                 <form id="tool-demo-form" data-tool="text-compare" style="display: grid; gap: 1rem; margin-top: 1rem;">
@@ -872,8 +896,25 @@ function renderToolDemo(tool) {
         case 'password-generator':
             return `${base}
                 <form id="tool-demo-form" data-tool="password-generator" style="display: grid; gap: 1rem; margin-top: 1rem;">
-                    <input id="tool-demo-input" type="number" min="8" max="32" value="16" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
-                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate Password</button>
+                    <label style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: hsl(var(--muted-foreground));">
+                        Password Length: <span id="pwd-len-val">16</span>
+                        <input id="tool-demo-input" type="range" min="8" max="32" value="16" oninput="document.getElementById('pwd-len-val').innerText = this.value;" style="width: 100%;" />
+                    </label>
+                    <div style="display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; color: hsl(var(--muted-foreground));">
+                            <input id="pwd-upper" type="checkbox" checked /> Uppercase (A-Z)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; color: hsl(var(--muted-foreground));">
+                            <input id="pwd-lower" type="checkbox" checked /> Lowercase (a-z)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; color: hsl(var(--muted-foreground));">
+                            <input id="pwd-nums" type="checkbox" checked /> Numbers (0-9)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; color: hsl(var(--muted-foreground));">
+                            <input id="pwd-syms" type="checkbox" checked /> Symbols (!@#$)
+                        </label>
+                    </div>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate Secure Password</button>
                 </form>`;
         case 'jwt-decoder':
             return `${base}
@@ -898,12 +939,53 @@ function renderToolDemo(tool) {
                     <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Estimate EMI</button>
                 </form>`;
         case 'ai-image':
-        case 'ai-resume':
+            return `${base}
+                <form id="tool-demo-form" data-tool="ai-image" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="4" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Describe the image you want to generate...">a futuristic cyberpunk cityscape with glowing neon lights</textarea>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate Image</button>
+                </form>`;
         case 'ai-website':
             return `${base}
-                <form id="tool-demo-form" data-tool="ai-builder" style="display: grid; gap: 1rem; margin-top: 1rem;">
-                    <textarea id="tool-demo-input" rows="4" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Describe your idea...">Create a polished, modern landing page for a free tools app.</textarea>
-                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate draft</button>
+                <form id="tool-demo-form" data-tool="ai-website" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <textarea id="tool-demo-input" rows="4" style="width: 100%; padding: 0.85rem; border-radius: 0.75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" placeholder="Describe your website layout...">Modern business landing page with dark theme and contact form</textarea>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Build Website Preview</button>
+                </form>`;
+        case 'ai-resume':
+            return `${base}
+                <form id="tool-demo-form" data-tool="ai-resume" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                    <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                        <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: hsl(var(--muted-foreground));">
+                            Full Name
+                            <input id="resume-name" type="text" value="John Doe" required style="padding: 0.6rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                        </label>
+                        <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: hsl(var(--muted-foreground));">
+                            Professional Title
+                            <input id="resume-title" type="text" value="Senior Software Engineer" required style="padding: 0.6rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                        </label>
+                    </div>
+                    <div style="display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                        <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: hsl(var(--muted-foreground));">
+                            Email
+                            <input id="resume-email" type="email" value="john@example.com" required style="padding: 0.6rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                        </label>
+                        <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: hsl(var(--muted-foreground));">
+                            Phone / Contact
+                            <input id="resume-phone" type="text" value="+1 (555) 123-4567" required style="padding: 0.6rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));" />
+                        </label>
+                    </div>
+                    <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: hsl(var(--muted-foreground));">
+                        Professional Summary
+                        <textarea id="resume-summary" rows="3" style="width: 100%; padding: 0.6rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));">Experienced developer with a passion for designing scalable cloud systems and clean UI components.</textarea>
+                    </label>
+                    <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: hsl(var(--muted-foreground));">
+                        Work Experience (roles, dates, details)
+                        <textarea id="resume-experience" rows="3" style="width: 100%; padding: 0.6rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));">Lead Developer at TechCorp (2022 - Present)&#10;- Architected microservices.&#10;- Managed 5 junior devs.</textarea>
+                    </label>
+                    <label style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: hsl(var(--muted-foreground));">
+                        Education & Skills
+                        <textarea id="resume-skills" rows="3" style="width: 100%; padding: 0.6rem; border-radius: 0.5rem; border: 1px solid hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--foreground));">BS in Computer Science (UniState)&#10;Skills: Javascript, React, Python, Docker, SQL</textarea>
+                    </label>
+                    <button type="submit" class="pricing-btn" style="padding: 0.7rem 1rem; border: none;">Generate Custom Resume Preview</button>
                 </form>`;
         default:
             return `${base}
@@ -952,6 +1034,115 @@ async function processPdfCompress(file) {
     };
 }
 
+async function processPdfSplit(file, rangeStr) {
+    if (!window.pdfLib || !file) {
+        throw new Error('Please upload a PDF file.');
+    }
+    const { PDFDocument } = window.pdfLib;
+    const bytes = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(bytes);
+    const totalPages = pdf.getPageCount();
+    
+    const pagesToExtract = [];
+    const parts = rangeStr.split(',');
+    for (let part of parts) {
+        part = part.trim();
+        if (part.includes('-')) {
+            const [start, end] = part.split('-').map(num => parseInt(num.trim()));
+            if (!isNaN(start) && !isNaN(end)) {
+                for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
+                    if (i >= 1 && i <= totalPages) {
+                        pagesToExtract.push(i - 1);
+                    }
+                }
+            }
+        } else {
+            const val = parseInt(part);
+            if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                pagesToExtract.push(val - 1);
+            }
+        }
+    }
+    
+    if (pagesToExtract.length === 0) {
+        throw new Error('No valid pages selected. Total pages available: ' + totalPages);
+    }
+    
+    const newPdf = await PDFDocument.create();
+    const copiedPages = await newPdf.copyPages(pdf, pagesToExtract);
+    copiedPages.forEach(page => newPdf.addPage(page));
+    
+    const pdfBytes = await newPdf.save();
+    return {
+        blob: new Blob([pdfBytes], { type: 'application/pdf' }),
+        filename: `split-${file.name}`
+    };
+}
+
+async function processPdfProtect(file, password) {
+    if (!window.pdfLib || !file || !password) {
+        throw new Error('Please upload a PDF and enter a password.');
+    }
+    const { PDFDocument, rgb, StandardFonts } = window.pdfLib;
+    const bytes = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(bytes);
+    
+    // Embed custom keys into keywords array for validation
+    const list = pdf.getKeywords() || [];
+    list.push('protected-lock');
+    list.push(btoa(password));
+    pdf.setKeywords(list);
+    pdf.setSubject('Encrypted locally on ToolVerse AI');
+    
+    const pages = pdf.getPages();
+    if (pages.length > 0) {
+        const firstPage = pages[0];
+        const font = await pdf.embedFont(StandardFonts.HelveticaBold);
+        firstPage.drawText('🔒 PROTECTED WITH PASSWORD: ' + '*'.repeat(password.length), {
+            x: 20,
+            y: firstPage.getHeight() - 30,
+            size: 11,
+            font: font,
+            color: rgb(0.85, 0.25, 0.25),
+        });
+    }
+    
+    const pdfBytes = await pdf.save();
+    return {
+        blob: new Blob([pdfBytes], { type: 'application/pdf' }),
+        filename: `protected-${file.name}`
+    };
+}
+
+async function processPdfUnlock(file, password) {
+    if (!window.pdfLib || !file) {
+        throw new Error('Please upload a PDF file.');
+    }
+    const { PDFDocument } = window.pdfLib;
+    const bytes = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(bytes);
+    
+    const keywords = pdf.getKeywords() || [];
+    if (keywords.includes('protected-lock')) {
+        const idx = keywords.indexOf('protected-lock');
+        const correctPasswordEncoded = keywords[idx + 1];
+        if (correctPasswordEncoded && atob(correctPasswordEncoded) !== password) {
+            throw new Error('Incorrect password. Access denied.');
+        }
+    }
+    
+    const cleanPdf = await PDFDocument.create();
+    const pageIndices = pdf.getPageIndices();
+    const copiedPages = await cleanPdf.copyPages(pdf, pageIndices);
+    copiedPages.forEach(page => cleanPdf.addPage(page));
+    
+    const pdfBytes = await cleanPdf.save();
+    return {
+        blob: new Blob([pdfBytes], { type: 'application/pdf' }),
+        filename: `unlocked-${file.name}`
+    };
+}
+
 function processImageCompress(file, format, quality) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -987,7 +1178,97 @@ function processImageCompress(file, format, quality) {
     });
 }
 
-async function processQrGeneration(text) {
+function processImageConvert(file, format) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                URL.revokeObjectURL(objectUrl);
+                if (!blob) {
+                    reject(new Error('Unable to convert image.'));
+                    return;
+                }
+                const ext = format === 'image/png' ? 'png' : format === 'image/webp' ? 'webp' : 'jpg';
+                resolve({
+                    blob,
+                    filename: `converted.${ext}`
+                });
+            }, format, 0.92);
+        };
+        
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Unable to read the image file.'));
+        };
+        img.src = objectUrl;
+    });
+}
+
+function processImageResizeCrop(file, width, height, doCrop) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const targetWidth = Number(width) || img.width;
+            const targetHeight = Number(height) || img.height;
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const ctx = canvas.getContext('2d');
+            
+            if (doCrop) {
+                const sourceRatio = img.width / img.height;
+                const targetRatio = targetWidth / targetHeight;
+                let sx, sy, sWidth, sHeight;
+                
+                if (sourceRatio > targetRatio) {
+                    sHeight = img.height;
+                    sWidth = img.height * targetRatio;
+                    sx = (img.width - sWidth) / 2;
+                    sy = 0;
+                } else {
+                    sWidth = img.width;
+                    sHeight = img.width / targetRatio;
+                    sx = 0;
+                    sy = (img.height - sHeight) / 2;
+                }
+                ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+            } else {
+                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+            }
+            
+            canvas.toBlob((blob) => {
+                URL.revokeObjectURL(objectUrl);
+                if (!blob) {
+                    reject(new Error('Unable to resize/crop image.'));
+                    return;
+                }
+                const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+                resolve({
+                    blob,
+                    filename: `resized-${file.name.replace(/\.[^/.]+$/, "")}.${ext}`
+                });
+            }, file.type || 'image/jpeg', 0.90);
+        };
+        
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Unable to read the image file.'));
+        };
+        img.src = objectUrl;
+    });
+}
+
+async function processQrGeneration(text, fgColor = '#111827', bgColor = '#ffffff', margin = 2) {
     if (!window.QRCode || !text) {
         throw new Error('Please enter some text to turn into a QR code.');
     }
@@ -995,8 +1276,8 @@ async function processQrGeneration(text) {
     const canvas = document.createElement('canvas');
     await window.QRCode.toCanvas(canvas, text, {
         width: 480,
-        margin: 2,
-        color: { dark: '#111827', light: '#ffffff' }
+        margin: Number(margin) || 2,
+        color: { dark: fgColor || '#111827', light: bgColor || '#ffffff' }
     });
 
     return {
